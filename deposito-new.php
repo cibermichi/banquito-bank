@@ -1,18 +1,19 @@
 <?php
-
 session_start();
-$userId = $_SESSION["Auth"];
-
+if (!isset($_SESSION["Auth"])) {
+    header("location: index.php");
+    exit;
+}
 require_once "config.php";
-require_once "model/class_transaccion.php";
-require_once "util.php";
+require_once "db.php";
+
+$userId = $_SESSION['id'];
 
 $error = "";
 if (isset($_SESSION["error"])) {
     $error = $_SESSION["error"];
     unset($_SESSION["error"]);
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="es">

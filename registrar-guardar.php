@@ -1,57 +1,40 @@
 <?php
-
 session_start();
 
-$user = trim($_POST["user"]);
-$pass = trim($_POST["pass"]);
+$username     = trim($_POST["usuario"]);
+$pass         = trim($_POST["pass"]);
 $pass_confirm = trim($_POST["pass_confirm"]);
-$nombre = trim($_POST["nombre"]);
+$nombre       = trim($_POST["nombre"]);
+
+if (empty($username) || empty($pass) || empty($nombre)) {
+    header("location: registrar.php?error=empty");
+    exit;
+}
 
 if ($pass !== $pass_confirm) {
     header("location: registrar.php?error=password");
     exit;
 }
 
-if (empty($user) || empty($pass) || empty($nombre)) {
-    header("location: registrar.php?error=empty");
-    exit;
-}
+require_once "db.php";
 
-$file = fopen("data/user.txt", "r");
-$exists = false;
-
-while(!feof($file)){
-    $fila = fgets($file);
-    $userArray = explode("|", trim($fila));
-    
-    if (count($userArray) >= 2 && $userArray[1] == $user){//verifica que el indice 0 no este vacio
-        $exists = true;
-        break;
-    }
-}
-fclose($file);
-
-if ($exists) {
+$stmt = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = :usuario");
+$stmt->execute([':usuario' => $username]);
+if ($stmt->fetch()) {
     header("location: registrar.php?error=exists");
     exit;
 }
 
-$file = fopen("data/user.txt", "a");
-$id = 1;
-$fileRead = fopen("data/user.txt", "r");
-while(!feof($fileRead)){
-    $fila = fgets($fileRead);
-    $userArray = explode("|", trim($fila));
-    if (count($userArray) >= 1){
-        $id = intval($userArray[0]) + 1;
-    }
-}
-fclose($fileRead);
-
-$newUser = $id . "|" . $user . "|" . $pass . "|" . $nombre . "|2|0\n";
-fwrite($file, $newUser);
-fclose($file);
+$stmt = $pdo->prepare("
+    INSERT INTO usuarios (usuario, password, nombre, tipo, saldo)
+    VALUES (:usuario, :password, :nombre, 2, 0.00)
+");
+$stmt->execute([
+    ':usuario'  => $username,
+    ':password' => $pass,
+    ':nombre'   => $nombre
+]);
 
 header("location: index.php?registered=1");
-
+exit;
 ?>

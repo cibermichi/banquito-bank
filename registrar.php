@@ -57,18 +57,18 @@ require_once "config.php";
             
             <form action="registrar-guardar.php" method="POST" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
-                    <input type="text" name="nombre" required 
-                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
-                        placeholder="Juan Pérez">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
-                    <input type="text" name="user" required 
-                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
-                        placeholder="Nombre de usuario">
-                </div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+    <input type="text" name="nombre" required 
+        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
+        placeholder="Ej: Juan Pérez">
+</div>
+
+<div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+    <input type="text" name="usuario" required 
+        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 outline-none transition"
+        placeholder="Ej: juan123">
+</div>
                 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>

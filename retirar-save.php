@@ -1,16 +1,14 @@
 <?php
-
 session_start();
 if (!isset($_SESSION["Auth"])) {
     header("location: index.php");
     exit;
 }
-require_once "config.php";
-require_once "model/class_transaccion.php";
-require_once "util.php";
 
-$userId = $_POST["userId"];
-$monto = floatval($_POST["monto"]);
+require_once "db.php";
+
+$userId = intval($_POST["userId"]);
+$monto  = floatval($_POST["monto"]);
 
 if ($monto <= 0) {
     $_SESSION["error"] = "El monto debe ser mayor a 0";
@@ -18,28 +16,38 @@ if ($monto <= 0) {
     exit;
 }
 
-$saldo = 0;
-$file = fopen("data/user.txt", "r");
-while( !feof($file)){
-    $fila = fgets($file);
-    $userArray = explode("|", trim($fila));
-    if (isset($userArray[0]) && $userArray[0] == $userId){
-        $saldo = isset($userArray[5]) ? floatval($userArray[5]) : 0;
-        break;
-    }
-}
-fclose($file);
+$stmt = $pdo->prepare("SELECT saldo FROM usuarios WHERE id = :id");
+$stmt->execute([':id' => $userId]);
+$user = $stmt->fetch();
+$saldo = floatval($user['saldo']);
 
-if ($saldo >= $monto) {
-    $nuevoSaldo = $saldo - $monto;
-    ActualizarSaldo($userId, $nuevoSaldo);
-    GuardarTransaccion($userId, "retiro", $monto);
-    $_SESSION["saldo"] = $nuevoSaldo;
-    $_SESSION["ultimoRetiro"] = $monto;
-    header("location: retirar-result.php");
-} else {
+if ($saldo < $monto) {
     $_SESSION["error"] = "Saldo insuficiente. Saldo actual: " . number_format($saldo, 2) . " Bs.";
     header("location: retirar-new.php");
+    exit;
 }
 
+$nuevoSaldo = $saldo - $monto;
+
+$pdo->beginTransaction();
+try {
+    $pdo->prepare("UPDATE usuarios SET saldo = :saldo WHERE id = :id")
+        ->execute([':saldo' => $nuevoSaldo, ':id' => $userId]);
+
+    $pdo->prepare("INSERT INTO transacciones (usuario_id, tipo, monto, saldo_antes, saldo_despues)
+                   VALUES (:uid, 'retiro', :monto, :antes, :despues)")
+        ->execute([':uid' => $userId, ':monto' => $monto, ':antes' => $saldo, ':despues' => $nuevoSaldo]);
+
+    $pdo->commit();
+} catch (Exception $e) {
+    $pdo->rollBack();
+    $_SESSION["error"] = "Error al procesar el retiro.";
+    header("location: retirar-new.php");
+    exit;
+}
+
+$_SESSION["saldo"]        = $nuevoSaldo;
+$_SESSION["ultimoRetiro"] = $monto;
+header("location: retirar-result.php");
+exit;
 ?>

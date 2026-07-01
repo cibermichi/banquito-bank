@@ -1,41 +1,21 @@
 <?php
-
 session_start();
-
 if (!isset($_SESSION["Auth"])) {
     header("location: index.php");
+    exit;
 }
-
 require_once "config.php";
-require_once "util.php";
-require_once "model/class_transaccion.php";
+require_once "db.php";
 
-$usuarios = array();
-$file = fopen("data/user.txt", "r");
-while (!feof($file)) {
-    $fila = fgets($file);
-    if (trim($fila) == "") continue;
-    $userArray = explode("|", trim($fila));
-    $usuarios[$userArray[0]] = $userArray[3]; //array asociativo con id como clave y nombre como valor
-}
-fclose($file);
-
-$transacciones = array();
-if (file_exists("data/transacciones.txt")) {
-    $file = fopen("data/transacciones.txt", "r");
-    while (!feof($file)) {
-        $fila = fgets($file);
-        if (trim($fila) == "") continue;
-        $t = explode("|", trim($fila));
-        $nombreUsuario = isset($usuarios[$t[0]]) ? $usuarios[$t[0]] : "Desconocido";
-        $transacciones[] = new Transaccion($nombreUsuario, $t[1], $t[2], $t[3]);
-        ;
-    }
-    fclose($file);
-    $transacciones = array_reverse($transacciones);
-    //la ultima transaccion aparece primero
-}
+$stmt = $pdo->query("
+    SELECT u.nombre, t.tipo, t.monto, t.fecha
+    FROM transacciones t
+    JOIN usuarios u ON u.id = t.usuario_id
+    ORDER BY t.fecha DESC
+");
+$transacciones = $stmt->fetchAll();
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -95,26 +75,22 @@ if (file_exists("data/transacciones.txt")) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($transacciones as $t): ?>
-                            <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                <td class="py-3 px-2 text-slate-800"><?php echo htmlspecialchars($t->usuario); ?></td>
-                                <td class="py-3 px-2">
-                                    <?php if($t->tipo == "deposito"): ?>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Depósito
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                            Retiro
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="py-3 px-2 text-right font-medium <?php echo $t->tipo == 'deposito' ? 'text-green-600' : 'text-orange-600'; ?>">
-                                    <?php echo $t->tipo == "deposito" ? "+" : "-"; ?><?php echo number_format(floatval($t->monto ?? 0), 2); ?> Bs.
-                                </td>
-                                <td class="py-3 px-2 text-slate-500 text-sm"><?php echo htmlspecialchars($t->fecha); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
+<?php foreach ($transacciones as $t): ?>
+<tr class="border-b border-slate-100 hover:bg-slate-50">
+    <td class="py-3 px-2 text-slate-800"><?php echo htmlspecialchars($t['nombre']); ?></td>
+    <td class="py-3 px-2">
+        <?php if($t['tipo'] == "deposito"): ?>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Depósito</span>
+        <?php else: ?>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Retiro</span>
+        <?php endif; ?>
+    </td>
+    <td class="py-3 px-2 text-right font-medium <?php echo $t['tipo'] == 'deposito' ? 'text-green-600' : 'text-orange-600'; ?>">
+        <?php echo $t['tipo'] == "deposito" ? "+" : "-"; ?><?php echo number_format(floatval($t['monto']), 2); ?> Bs.
+    </td>
+    <td class="py-3 px-2 text-slate-500 text-sm"><?php echo $t['fecha']; ?></td>
+</tr>
+<?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>

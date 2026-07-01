@@ -1,39 +1,18 @@
 <?php
-
 session_start();
-
 if (!isset($_SESSION["Auth"])) {
     header("location: index.php");
     exit;
 }
-
-if ($_SESSION["userType"] != 1) {
+if ($_SESSION['tipo'] != 1) {
     header("location: manager.php");
     exit;
 }
-
 require_once "config.php";
-require_once "util.php";
-require_once "model/class_cuentas.php";
+require_once "db.php";
 
-
-$usuarios = array();
-$file = fopen("data/user.txt", "r");
-while (!feof($file)) {
-    $fila = fgets($file);
-    if (trim($fila) == "") continue;
-    $userArray = explode("|", trim($fila));
-    /*$usuarios[] = array(
-        "id"     => $userArray[0],
-        "usuario"=> $userArray[1],
-        "nombre" => $userArray[3],
-        "tipo"   => $userArray[4],
-        "saldo"  => isset($userArray[5]) ? $userArray[5] : 0
-    );*/
-
-   $usuarios[] = new Cuentas($userArray[0], $userArray[1], $userArray[3], $userArray[4], isset($userArray[5]) ? $userArray[5] : 0);
-}
-fclose($file);
+$stmt = $pdo->query("SELECT id, usuario, nombre, tipo, saldo FROM usuarios ORDER BY id");
+$usuarios = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -88,27 +67,23 @@ fclose($file);
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($usuarios as $u): ?>
-                        <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="py-3 px-2 text-slate-500"><?php echo $u->id; ?></td>
-                            <td class="py-3 px-2 text-slate-800 font-medium"><?php echo htmlspecialchars($u->usuario); ?></td>
-                            <td class="py-3 px-2 text-slate-800"><?php echo htmlspecialchars($u->nombre); ?></td>
-                            <td class="py-3 px-2 text-center">
-                                <?php if($u->tipo == 1): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                        Admin
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
-                                        Cliente
-                                    </span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="py-3 px-2 text-right font-medium text-slate-700">
-                                <?php echo number_format(floatval($u->saldo ?? 0), 2); ?> Bs.
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
+<?php foreach ($usuarios as $u): ?>
+<tr class="border-b border-slate-100 hover:bg-slate-50">
+    <td class="py-3 px-2 text-slate-500"><?php echo $u['id']; ?></td>
+    <td class="py-3 px-2 text-slate-800 font-medium"><?php echo htmlspecialchars($u['usuario']); ?></td>
+    <td class="py-3 px-2 text-slate-800"><?php echo htmlspecialchars($u['nombre']); ?></td>
+    <td class="py-3 px-2 text-center">
+        <?php if($u['tipo'] == 1): ?>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Admin</span>
+        <?php else: ?>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">Cliente</span>
+        <?php endif; ?>
+    </td>
+    <td class="py-3 px-2 text-right font-medium text-slate-700">
+        <?php echo number_format(floatval($u['saldo']), 2); ?> Bs.
+    </td>
+</tr>
+<?php endforeach; ?>
                     </tbody>
                 </table>
             </div>

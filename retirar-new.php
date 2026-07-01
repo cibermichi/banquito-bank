@@ -1,31 +1,26 @@
 <?php
-
 session_start();
-$userId = $_SESSION["Auth"];
-
+if (!isset($_SESSION["Auth"])) {
+    header("location: index.php");
+    exit;
+}
 require_once "config.php";
-require_once "model/class_transaccion.php";
-require_once "util.php";
+require_once "db.php";
 
+$userId = $_SESSION['id'];
 
 $error = "";
-if ( isset($_SESSION["error"]) ){
+if (isset($_SESSION["error"])) {
     $error = $_SESSION["error"];
     unset($_SESSION["error"]);
 }
 
-$saldo = 0;
-$file = fopen("data/user.txt", "r");
-while( !feof($file)){
-    $fila = fgets($file);
-    $userArray = explode("|", trim($fila));
-    if (isset($userArray[0]) && $userArray[0] == $userId){
-        $saldo = isset($userArray[5]) ? $userArray[5] : 0;
-    }
-}
-fclose($file);
-
+$stmt = $pdo->prepare("SELECT saldo FROM usuarios WHERE id = :id");
+$stmt->execute([':id' => $userId]);
+$user = $stmt->fetch();
+$saldo = $user ? $user['saldo'] : 0;
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
